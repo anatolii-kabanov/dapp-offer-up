@@ -16,12 +16,6 @@ const IST_UNIT = 1_000_000n;
 const CENT = IST_UNIT / 100n;
 
 /**
- * @import {ERef} from '@endo/far';
- * @import {StorageNode} from '@agoric/internal/src/lib-chainStorage.js';
- * @import {BootstrapManifest} from '@agoric/vats/src/core/lib-boot.js';
- */
-
-/**
  * Make a storage node for auxilliary data for a value on the board.
  *
  * @param {ERef<StorageNode>} chainStorage
@@ -42,11 +36,7 @@ const publishBrandInfo = async (chainStorage, board, brand) => {
   await E(node).setValue(JSON.stringify(aux));
 };
 
-// TODO get these from agoric-sdk
-/** @typedef {Record<string, any>} BootstrapPowers */
-
 /**
- *
  * Core eval script to start contract
  *
  * @param {BootstrapPowers} permittedPowers
@@ -57,16 +47,19 @@ export const startOfferUpContract = async permittedPowers => {
     consume: { board, chainStorage, startUpgradable, zoe },
     brand: {
       consume: { IST: istBrandP },
+      // @ts-expect-error dynamic extension to promise space
       produce: { Item: produceItemBrand },
     },
     issuer: {
       consume: { IST: istIssuerP },
+      // @ts-expect-error dynamic extension to promise space
       produce: { Item: produceItemIssuer },
     },
     installation: {
       consume: { offerUp: offerUpInstallationP },
     },
     instance: {
+      // @ts-expect-error dynamic extension to promise space
       produce: { offerUp: produceInstance },
     },
   } = permittedPowers;
@@ -78,7 +71,6 @@ export const startOfferUpContract = async permittedPowers => {
 
   // agoricNames gets updated each time; the promise space only once XXXXXXX
   const installation = await offerUpInstallationP;
-
   const { instance } = await E(startUpgradable)({
     installation,
     issuerKeywordRecord: { Price: istIssuer },
@@ -90,9 +82,8 @@ export const startOfferUpContract = async permittedPowers => {
     brands: { Item: brand },
     issuers: { Item: issuer },
   } = await E(zoe).getTerms(instance);
-
   console.log('CoreEval script: share via agoricNames:', brand);
-
+  console.log('[instance]', JSON.stringify(instance));
   produceInstance.reset();
   produceInstance.resolve(instance);
 
@@ -105,7 +96,7 @@ export const startOfferUpContract = async permittedPowers => {
   console.log('offerUp (re)started');
 };
 
-/** @type {BootstrapManifest} */
+/** @type { import("@agoric/vats/src/core/lib-boot").BootstrapManifest } */
 const offerUpManifest = {
   [startOfferUpContract.name]: {
     consume: {

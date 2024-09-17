@@ -13,7 +13,6 @@ import { makeCopyBag } from '@endo/patterns';
 import { makeNodeBundleCache } from '@endo/bundle-source/cache.js';
 import { makeZoeKitForTest } from '@agoric/zoe/tools/setup-zoe.js';
 import { AmountMath, makeIssuerKit } from '@agoric/ertp';
-import '@agoric/zoe/src/zoeService/types-ambient.js';
 
 import { makeStableFaucet } from './mintStable.js';
 import { startOfferUpContract } from '../src/offer-up-proposal.js';
@@ -23,29 +22,20 @@ import { startOfferUpContract } from '../src/offer-up-proposal.js';
 const myRequire = createRequire(import.meta.url);
 const contractPath = myRequire.resolve(`../src/offer-up.contract.js`);
 
-/** @typedef {Awaited<ReturnType<import('@endo/bundle-source/cache.js').makeNodeBundleCache>>} BundleCache */
-
-/**
- * @typedef {{
- *   zoe: ZoeService,
- *   bundle: any,
- *   bundleCache: BundleCache,
- *   feeMintAccess: FeeMintAccess
- * }} TestContext
- */
-
-const test = /** @type {import('ava').TestFn<TestContext>}} */ (anyTest);
-
-/**
- * @import {ERef} from '@endo/far';
- * @import {ExecutionContext} from 'ava';
- * @import {Instance} from '@agoric/zoe/src/zoeService/utils.js';
- * @import {Purse} from '@agoric/ertp/src/types.js';
- */
+/** @type {import('ava').TestFn<Awaited<ReturnType<makeTestContext>>>} */
+const test = anyTest;
 
 const UNIT6 = 1_000_000n;
 const CENT = UNIT6 / 100n;
 
+/**
+ * Tests assume access to the zoe service and that contracts are bundled.
+ *
+ * See test-bundle-source.js for basic use of bundleSource().
+ * Here we use a bundle cache to optimize running tests multiple times.
+ *
+ * @param {unknown} _t
+ */
 const makeTestContext = async _t => {
   const { zoeService: zoe, feeMintAccess } = makeZoeKitForTest();
 
@@ -86,14 +76,15 @@ test('Start the contract', async t => {
 /**
  * Alice trades by paying the price from the contract's terms.
  *
- * @param {ExecutionContext} t
+ * @param {import('ava').ExecutionContext} t
  * @param {ZoeService} zoe
- * @param {ERef<Instance<AssetContractFn>>} instance
- * @param {Purse<'nat'>} purse
+ * @param {ERef<import('@agoric/zoe/src/zoeService/utils').Instance<AssetContractFn>} instance
+ * @param {Purse} purse
  * @param {string[]} choices
  */
 const alice = async (t, zoe, instance, purse, choices = ['map', 'scroll']) => {
   const publicFacet = E(zoe).getPublicFacet(instance);
+  // @ts-expect-error Promise<Instance> seems to work
   const terms = await E(zoe).getTerms(instance);
   const { issuers, brands, tradePrice } = terms;
 

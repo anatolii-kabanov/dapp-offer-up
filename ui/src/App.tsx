@@ -91,11 +91,9 @@ const makeOffer = (giveValue: bigint, wantChoices: Record<string, bigint>) => {
   if (!offerUpInstance) throw Error('no contract instance');
   if (!(brands && brands.IST && brands.Item))
     throw Error('brands not available');
-
   const value = makeCopyBag(entries(wantChoices));
   const want = { Items: { brand: brands.Item, value } };
   const give = { Price: { brand: brands.IST, value: giveValue } };
-
   wallet?.makeOffer(
     {
       source: 'contract',
@@ -114,6 +112,25 @@ const makeOffer = (giveValue: bigint, wantChoices: Record<string, bigint>) => {
       if (update.status === 'refunded') {
         alert('Offer rejected');
       }
+    },
+  );
+};
+
+const sayHi = () => {
+  const { wallet, offerUpInstance } = useAppStore.getState();
+  if (!offerUpInstance) throw Error('no contract instance');
+  wallet?.makeOffer(
+    {
+      source: 'contract',
+      instance: offerUpInstance,
+      publicInvitationMaker: 'sayHiInvitation',
+    },
+    {},
+    { who: wallet.address },
+    (update: { status: string; data?: unknown }) => {
+      console.log('[HI UPDATE]: ', update);
+      console.log('[HI UPDATE]: ', update.status);
+      console.log('[HI UPDATE]: ', update.data);
     },
   );
 };
@@ -153,6 +170,8 @@ function App() {
           istPurse={istPurse as Purse}
           walletConnected={!!wallet}
         />
+        <hr />
+        <button onClick={sayHi}>Hi</button>
         <hr />
         {wallet && istPurse ? (
           <Inventory

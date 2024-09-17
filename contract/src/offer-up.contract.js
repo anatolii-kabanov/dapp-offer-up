@@ -26,11 +26,6 @@ import { AmountShape } from '@agoric/ertp/src/typeGuards.js';
 import { atomicRearrange } from '@agoric/zoe/src/contractSupport/atomicTransfer.js';
 import '@agoric/zoe/exported.js';
 
-/**
- * @import {Amount} from '@agoric/ertp/src/types.js';
- * @import {CopyBag} from '@endo/patterns';
- *
- */
 const { Fail, quote: q } = assert;
 
 // #region bag utilities
@@ -38,7 +33,7 @@ const { Fail, quote: q } = assert;
 const sum = xs => xs.reduce((acc, x) => acc + x, 0n);
 
 /**
- * @param {CopyBag} bag
+ * @param {import('@endo/patterns').CopyBag} bag
  * @returns {bigint[]}
  */
 const bagCounts = bag => {
@@ -129,20 +124,38 @@ export const start = async zcf => {
     return 'trade complete';
   };
 
+   /** @type {OfferHandler} */
+  const sayHiHandler = (buyerSeat, offerArgs) => {
+    buyerSeat.exit(true);
+    return `Hi there, ${offerArgs.who}!`;
+  }
+
   /**
-   * Make an invitation to trade for items.
-   *
-   * Proposal Keywords used in offers using these invitations:
-   *   - give: `Price`
-   *   - want: `Items`
+   * Zoe proposal is always = { give, want, exit }
+   * @returns 
    */
+  const sayHiInvitation = () =>
+    zcf.makeInvitation(sayHiHandler, 'Hi to App', undefined, undefined);
+
+  // /**
+  //  * Make an invitation to trade for items.
+  //  *
+  //  * Proposal Keywords used in offers using these invitations:
+  //  *   - give: `Price`
+  //  *   - want: `Items`
+  //  */
   const makeTradeInvitation = () =>
     zcf.makeInvitation(tradeHandler, 'buy items', undefined, proposalShape);
 
   // Mark the publicFacet Far, i.e. reachable from outside the contract
   const publicFacet = Far('Items Public Facet', {
     makeTradeInvitation,
+    sayHiInvitation,
   });
-  return harden({ publicFacet });
+
+  const creatorFacet = Far('Greetings Facet', {
+    sayHiInvitation,
+  });
+  return harden({ publicFacet, creatorFacet });
 };
 harden(start);
